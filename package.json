@@ -1,0 +1,17 @@
+{
+  "name": "grunt-less-themes",
+  "description": "Compile theme-able LESS files to CSS.",
+  "version": "0.0.1",
+  "licenses": [
+    {
+      "type": "MIT",
+      "url": "https://github.com/gruntjs/grunt-contrib-less/blob/master/LICENSE-MIT"
+    }
+  ],
+  "engines": {
+    "node": ">= 0.8.0"
+  },
+  "dependencies": {
+    "less": "~1.4.0"
+  }
+}
