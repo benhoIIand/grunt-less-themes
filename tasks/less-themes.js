@@ -81,7 +81,7 @@ module.exports = function(grunt) {
 
             }, nextTheme);
 
-        });
+        }, done);
     });
 
     var compileLess = function(srcFile, options, callback) {
