@@ -38,7 +38,7 @@ module.exports = function(grunt) {
             fs.createReadStream(options.themeDir +'_'+ theme +'-theme.less').pipe(fs.createWriteStream(options.rootDir +'_theme.less'));
 
             grunt.util.async.forEachSeries(srcFiles, function(f, nextFileObj) {
-                var destFile = options.outputDir + f.dest.replace('!theme!', theme);
+                var destFile = options.outputDir + f.dest.replace(options.placeholder, theme);
 
                 var files = f.src.filter(function(filepath) {
                     // Warn on and remove invalid source files (if nonull was set).
