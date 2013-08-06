@@ -35,7 +35,7 @@ module.exports = function(grunt) {
         }
 
         grunt.util.async.forEachSeries(options.themes, function(theme, nextTheme) {
-            fs.createReadStream(options.themeDir + theme +'.less').pipe(fs.createWriteStream(options.rootDir +'theme.less'));
+            fs.createReadStream(options.themeDir + theme +'-theme.less').pipe(fs.createWriteStream(options.rootDir +'theme.less'));
 
             grunt.util.async.forEachSeries(srcFiles, function(f, nextFileObj) {
                 var destFile = options.outputDir + f.dest.replace(options.placeholder, theme);
