@@ -17,28 +17,36 @@ module.exports = function(grunt) {
         less = require('less'),
         fs   = require('fs');
 
+    var _     = grunt.util._,
+        async = grunt.util.async;
+
     var lessOptions = {
         parse: ['paths', 'optimization', 'filename', 'strictImports', 'dumpLineNumbers'],
         render: ['compress', 'yuicompress', 'ieCompat']
     };
 
-    grunt.registerMultiTask('lessThemes', 'Compile LESS files to CSS', function() {
+    grunt.registerMultiTask('lessThemes', 'Compile multiple themed LESS files to CSS', function() {
+
+        var options = {
+            root: './',
+            output: 'generated',
+            themeDir: 'themes',
+            placeholder: '{{themeName}}',
+            themeImport: 'theme'
+        };
+
         var done = this.async();
 
-        var options = this.options(),
+        var options = _.extend(options, this.options()),
             srcFiles = this.files;
 
-        grunt.verbose.writeflags(options, 'Options');
+        async.forEachSeries(options.themes, function(theme, nextTheme) {
+            var themePath = options.root +'/'+ options.themeDir +'/'+ theme +'.less';
 
-        if (srcFiles.length < 1) {
-            grunt.log.warn('Destination not written because no source files were provided.');
-        }
+            fs.createReadStream(themePath).pipe(fs.createWriteStream(options.themeImport));
 
-        grunt.util.async.forEachSeries(options.themes, function(theme, nextTheme) {
-            fs.createReadStream(options.themeDir + theme +'-theme.less').pipe(fs.createWriteStream(options.rootDir +'theme.less'));
-
-            grunt.util.async.forEachSeries(srcFiles, function(f, nextFileObj) {
-                var destFile = options.outputDir + f.dest.replace(options.placeholder, theme);
+            async.forEachSeries(srcFiles, function(f, nextFileObj) {
+                var destFile = options.output +'/'+ f.dest.replace(options.placeholder, theme);
 
                 var files = f.src.filter(function(filepath) {
                     // Warn on and remove invalid source files (if nonull was set).
@@ -60,7 +68,8 @@ module.exports = function(grunt) {
                 }
 
                 var compiled = [];
-                grunt.util.async.concatSeries(files, function(file, next) {
+
+                async.concatSeries(files, function(file, next) {
                     compileLess(file, options, function(css, err) {
                         if (!err) {
                             compiled.push(css);
@@ -85,7 +94,7 @@ module.exports = function(grunt) {
     });
 
     var compileLess = function(srcFile, options, callback) {
-        options = grunt.util._.extend({
+        options = _.extend({
             filename: srcFile
         }, options);
         options.paths = options.paths || [path.dirname(srcFile)];
@@ -93,7 +102,7 @@ module.exports = function(grunt) {
         var css;
         var srcCode = grunt.file.read(srcFile);
 
-        var parser = new less.Parser(grunt.util._.pick(options, lessOptions.parse));
+        var parser = new less.Parser(_.pick(options, lessOptions.parse));
 
         parser.parse(srcCode, function(parse_err, tree) {
             if (parse_err) {
@@ -102,7 +111,7 @@ module.exports = function(grunt) {
             }
 
             try {
-                css = tree.toCSS(grunt.util._.pick(options, lessOptions.render));
+                css = tree.toCSS(_.pick(options, lessOptions.render));
                 callback(css, null);
             } catch (e) {
                 lessError(e);

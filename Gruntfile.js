@@ -21,14 +21,13 @@ module.exports = function(grunt) {
         lessThemes: {
             main: {
                 options: {
-                    rootDir: 'test/fixtures/',
-                    outputDir: 'tmp/',
+                    output: 'tmp',
                     themes: ['black', 'white'],
-                    themeDir: 'test/fixtures/themes/',
-                    placeholder: '{themeName}'
+                    themeDir: 'test/fixtures/themes',
+                    themeImport: 'test/fixtures/theme.less'
                 },
                 files: {
-                    'simple_{themeName}.css': ['test/fixtures/simple.less']
+                    'simple_{{themeName}}.css': ['test/fixtures/simple.less']
                 }
             }
         },
