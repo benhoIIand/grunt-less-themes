@@ -66,7 +66,7 @@ This option is the name of the theme file that is imported into each LESS file f
 lessThemes: {
     dev: {
         options: {
-            output: 'path/to/outpu'
+            output: 'path/to/output'
         },
         files: {
             'example_{{themeName}}.css': 'simple.less'
