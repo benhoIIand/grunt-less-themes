@@ -81,7 +81,7 @@ lessThemes: {
 lessThemes: {
     dev: {
         options: {
-            output: 'path/to/outpu',
+            output: 'path/to/output',
             themeDir: 'path/to/themes'
         },
         files: {
