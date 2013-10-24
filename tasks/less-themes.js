@@ -70,7 +70,7 @@ module.exports = function(grunt) {
                 var compiled = [];
 
                 async.concatSeries(files, function(file, next) {
-                    compileLess(file, options, function(css, err) {
+                    compileLess(file, options, function(err, css) {
                         if (!err) {
                             compiled.push(css);
                             next();
@@ -107,15 +107,15 @@ module.exports = function(grunt) {
         parser.parse(srcCode, function(parse_err, tree) {
             if (parse_err) {
                 lessError(parse_err);
-                callback('', true);
+                callback(true, '');
             }
 
             try {
                 css = tree.toCSS(_.pick(options, lessOptions.render));
-                callback(css, null);
+                callback(null, css);
             } catch (e) {
                 lessError(e);
-                callback(css, true);
+                callback(true, css);
             }
         });
     };
