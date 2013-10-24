@@ -43,52 +43,56 @@ module.exports = function(grunt) {
         async.forEachSeries(options.themes, function(theme, nextTheme) {
             var themePath = options.root +'/'+ options.themeDir +'/'+ theme +'.less';
 
-            fs.createReadStream(themePath).pipe(fs.createWriteStream(options.themeImport));
+            var rs = fs.createReadStream(themePath);
+            rs.pipe(fs.createWriteStream(options.themeImport));
 
-            async.forEachSeries(srcFiles, function(f, nextFileObj) {
-                var destFile = options.output +'/'+ f.dest.replace(options.placeholder, theme);
+            rs.on('end', function(){
 
-                var files = f.src.filter(function(filepath) {
-                    // Warn on and remove invalid source files (if nonull was set).
-                    if (!grunt.file.exists(filepath)) {
-                        grunt.log.warn('Source file "' + filepath + '" not found.');
-                        return false;
-                    } else {
-                        return true;
-                    }
-                });
+                async.forEachSeries(srcFiles, function(f, nextFileObj) {
+                    var destFile = options.output +'/'+ f.dest.replace(options.placeholder, theme);
 
-                if (files.length === 0) {
-                    if (f.src.length < 1) {
-                        grunt.log.warn('Destination not written because no source files were found.');
-                    }
-
-                    // No src files, goto next target. Warn would have been issued above.
-                    return nextFileObj();
-                }
-
-                var compiled = [];
-
-                async.concatSeries(files, function(file, next) {
-                    compileLess(file, options, function(err, css) {
-                        if (!err) {
-                            compiled.push(css);
-                            next();
+                    var files = f.src.filter(function(filepath) {
+                        // Warn on and remove invalid source files (if nonull was set).
+                        if (!grunt.file.exists(filepath)) {
+                            grunt.log.warn('Source file "' + filepath + '" not found.');
+                            return false;
                         } else {
-                            nextFileObj(err);
+                            return true;
                         }
                     });
-                }, function() {
-                    if (compiled.length < 1) {
-                        grunt.log.warn('Destination not written because compiled files were empty.');
-                    } else {
-                        grunt.file.write(destFile, compiled.join(grunt.util.normalizelf(grunt.util.linefeed)));
-                        grunt.log.writeln('File ' + destFile.cyan + ' created.');
-                    }
-                    nextFileObj();
-                });
 
-            }, nextTheme);
+                    if (files.length === 0) {
+                        if (f.src.length < 1) {
+                            grunt.log.warn('Destination not written because no source files were found.');
+                        }
+
+                        // No src files, goto next target. Warn would have been issued above.
+                        return nextFileObj();
+                    }
+
+                    var compiled = [];
+
+                    async.concatSeries(files, function(file, next) {
+                        compileLess(file, options, function(err, css) {
+                            if (!err) {
+                                compiled.push(css);
+                                next();
+                            } else {
+                                nextFileObj(err);
+                            }
+                        });
+                    }, function() {
+                        if (compiled.length < 1) {
+                            grunt.log.warn('Destination not written because compiled files were empty.');
+                        } else {
+                            grunt.file.write(destFile, compiled.join(grunt.util.normalizelf(grunt.util.linefeed)));
+                            grunt.log.writeln('File ' + destFile.cyan + ' created.');
+                        }
+                        nextFileObj();
+                    });
+
+                }, nextTheme);
+            });
 
         }, done);
     });
