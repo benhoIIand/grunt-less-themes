@@ -1,7 +1,13 @@
 {
   "name": "grunt-less-themes",
+  "author": "Ben Holland (http://benholland.me)",
   "description": "Compile multiple themed LESS files to CSS.",
   "version": "0.0.5",
+  "repository": {
+    "type": "git",
+    "url": "git@github.com:hollandben/grunt-less-themes.git"
+  },
+  "bugs": "https://github.com/hollandben/issues",
   "licenses": [
     {
       "type": "MIT",
