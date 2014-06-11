@@ -1,6 +1,6 @@
 # grunt-less-themes [![Build Status](https://travis-ci.org/hollandben/grunt-less-themes.png?branch=master)](https://travis-ci.org/hollandben/grunt-less-themes)
 
-> Compile multiple themed LESS files to CSS.
+> Compile multiple themed LESS files to CSS. This version has been modified to support font configurations as well for n^2 possible combinations.
 
 ## Getting Started
 This plugin requires Grunt `~0.4.0`
@@ -40,23 +40,30 @@ Default: 'themes'
 
 This option defines the directory where all the themes are hosted
 
-#### themes
-Type: `Array`
-
-This option provides the `grunt-less-themes` task with the names of each theme. This name is used to in finding the theme and in the generated file.
-
-#### placeholder
-Type: `String`
-Default: '{{theme}}'
-
-This option is the placeholder string used in the output CSS filename. The name of each theme will replace this placeholder.
-
 #### themeImport
 Type: `String`
 Default: 'theme'
 
 This option is the name of the theme file that is imported into each LESS file for compilation.
 
+#### fontDir
+Type: `String`
+Default: 'fonts'
+
+This option defines the directory where all the fonts are hosted
+
+#### fontImport
+Type: `String`
+Default: 'theme'
+
+This option is the name of the font file that is imported into each LESS file for compilation.
+
+
+#### placeholder
+Type: `String`
+Default: '{{themeDir}}'
+
+This option is the placeholder string used in the output CSS filename. The name of each theme will replace this placeholder.
 
 ### Usage Examples
 
