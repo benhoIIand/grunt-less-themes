@@ -123,7 +123,7 @@ module.exports = function (grunt) {
                 async.forEachSeries(themes, compilationFunction, nextFont);
             }, done);
         } else {
-            async.forEachSeries(themes, compilationFunction);
+            async.forEachSeries(themes, compilationFunction, done);
         }
     });
 
