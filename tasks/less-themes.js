@@ -28,7 +28,6 @@ module.exports = function (grunt) {
     grunt.registerMultiTask('lessThemes', 'Compile multiple themed LESS files to CSS', function () {
 
         var options = {
-            root: './',
             themes: 'themes/*.less',
             fonts: null,
             placeholder: '{{themeName}}',
