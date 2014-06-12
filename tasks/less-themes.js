@@ -30,8 +30,8 @@ module.exports = function (grunt) {
         var options = {
             root: './',
             output: 'generated',
-            themeDir: 'themes',
-            fontDir: 'fonts',
+            themes: 'themes/*.less',
+            fonts: null,
             placeholder: '{{themeName}}',
             font_placeholder: '{{fontName}}',
             themeImport: 'theme',
@@ -45,95 +45,89 @@ module.exports = function (grunt) {
 
         lessOptions = _.extend(lessOptions, this.options().lessOptions)
 
-        getFonts(options, function (fonts) {
-            getThemes(options, function (themes) {
+        var themes = grunt.file.expand(options.themes);
+        var fonts = options.fonts ? grunt.file.expand(options.fonts) : null;
+        var fontPath = null;
 
-                async.forEachSeries(themes, function (theme, nextTheme) {
-                    async.forEachSeries(fonts, function (font, nextFont) {
-                        var themePath = options.root + '/' + options.themeDir + '/' + theme;
-                        var fontPath = options.root + '/' + options.fontDir + '/' + font;
+        var compilationFunction = function (themePath, nextTheme) {
+            var rs = fs.createReadStream(themePath);
+            rs.pipe(fs.createWriteStream(options.themeImport));
 
-                        var rs = fs.createReadStream(themePath);
-                        rs.pipe(fs.createWriteStream(options.themeImport));
+            rs.on('end', function () {
 
-                        rs.on('end', function () {
-                            var rsFont = fs.createReadStream(fontPath);
-                            rsFont.pipe(fs.createWriteStream(options.fontImport));
+                var compilationInnerFunction = function () {
+                    async.forEachSeries(srcFiles, function (f, nextFileObj) {
+                        var themeName = themePath.toString().split('\/').pop().replace(/\..+$/, '');
+                        var destFile = options.output + '/' + f.dest.replace(options.placeholder, themeName);
+                        if (fontPath) {
+                            var fontName = fontPath.toString().split('\/').pop().replace(/\..+$/, '');
+                            destFile = destFile.replace(options.font_placeholder, fontName);
+                        }
 
-                            rsFont.on('end', function () {
-                                async.forEachSeries(srcFiles, function (f, nextFileObj) {
-                                    var destFile = options.output + '/' + f.dest.replace(options.placeholder, theme.replace(/\.[^/.]+$/, "")).replace(options.font_placeholder, font.replace(/\.[^/.]+$/, ""));
-
-                                    var files = f.src.filter(function (filepath) {
-                                        // Warn on and remove invalid source files (if nonull was set).
-                                        if (!grunt.file.exists(filepath)) {
-                                            grunt.log.warn('Source file "' + filepath + '" not found.');
-                                            return false;
-                                        } else {
-                                            return true;
-                                        }
-                                    });
-
-                                    if (files.length === 0) {
-                                        if (f.src.length < 1) {
-                                            grunt.log.warn('Destination not written because no source files were found.');
-                                        }
-
-                                        // No src files, goto next target. Warn would have been issued above.
-                                        return nextFileObj();
-                                    }
-
-                                    var compiled = [];
-
-                                    async.concatSeries(files, function (file, next) {
-                                        compileLess(file, options, function (err, css) {
-                                            if (!err) {
-                                                compiled.push(css);
-                                                next();
-                                            } else {
-                                                nextFileObj(err);
-                                            }
-                                        });
-                                    }, function () {
-                                        if (compiled.length < 1) {
-                                            grunt.log.warn('Destination not written because compiled files were empty.');
-                                        } else {
-                                            grunt.file.write(destFile, compiled.join(grunt.util.normalizelf(grunt.util.linefeed)));
-                                            grunt.log.writeln('File ' + destFile.cyan + ' created.');
-                                        }
-                                        nextFileObj();
-                                    });
-
-                                }, nextFont);
-                            });
+                        var files = f.src.filter(function (filepath) {
+                            // Warn on and remove invalid source files (if nonull was set).
+                            if (!grunt.file.exists(filepath)) {
+                                grunt.log.warn('Source file "' + filepath + '" not found.');
+                                return false;
+                            } else {
+                                return true;
+                            }
                         });
+
+                        if (files.length === 0) {
+                            if (f.src.length < 1) {
+                                grunt.log.warn('Destination not written because no source files were found.');
+                            }
+
+                            // No src files, goto next target. Warn would have been issued above.
+                            return nextFileObj();
+                        }
+
+                        var compiled = [];
+
+                        async.concatSeries(files, function (file, next) {
+                            compileLess(file, options, function (err, css) {
+                                if (!err) {
+                                    compiled.push(css);
+                                    next();
+                                } else {
+                                    nextFileObj(err);
+                                }
+                            });
+                        }, function () {
+                            if (compiled.length < 1) {
+                                grunt.log.warn('Destination not written because compiled files were empty.');
+                            } else {
+                                grunt.file.write(destFile, compiled.join(grunt.util.normalizelf(grunt.util.linefeed)));
+                                grunt.log.writeln('File ' + destFile.cyan + ' created.');
+                            }
+                            nextFileObj();
+                        });
+
                     }, nextTheme);
-                }, done);
+                };
+
+                if (fontPath) {
+                    var rsFont = fs.createReadStream(fontPath);
+                    rsFont.pipe(fs.createWriteStream(options.fontImport));
+                    rsFont.on('end', compilationInnerFunction);
+                } else {
+                    compilationInnerFunction();
+                }
+
             });
-        });
+        };
+
+
+        if (fonts) {
+            async.forEachSeries(fonts, function (fontPathInner, nextFont) {
+                fontPath = fontPathInner;
+                async.forEachSeries(themes, compilationFunction, nextFont);
+            }, done);
+        } else {
+            async.forEachSeries(themes, compilationFunction);
+        }
     });
-
-    var getThemes = function (options, callback) {
-        var themePath = options.root + '/' + options.themeDir;
-
-        fs.readdir(themePath, function (err, list) {
-            if (err) {
-                throw err;
-            }
-            callback(list);
-        });
-    };
-
-    var getFonts = function (options, callback) {
-        var fontPath = options.root + '/' + options.fontDir;
-
-        fs.readdir(fontPath, function (err, list) {
-            if (err) {
-                throw err;
-            }
-            callback(list);
-        });
-    };
 
     var compileLess = function (srcFile, options, callback) {
         options = _.extend({

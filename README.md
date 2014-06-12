@@ -34,11 +34,11 @@ Default: 'generated'
 
 This option defines the output directory for the `grunt-less-theme` task.
 
-#### themeDir
+#### themes
 Type: `String`
-Default: 'themes'
+Default: 'themes/*.less'
 
-This option defines the directory where all the themes are hosted
+This option defines the path to where all the themes are hosted
 
 #### themeImport
 Type: `String`
@@ -46,11 +46,11 @@ Default: 'theme'
 
 This option is the name of the theme file that is imported into each LESS file for compilation.
 
-#### fontDir
+#### themes
 Type: `String`
-Default: 'fonts'
+Default: null
 
-This option defines the directory where all the fonts are hosted
+This option defines the path to where all the fonts are hosted. If this is null then font parsing will not occur.
 
 #### fontImport
 Type: `String`
