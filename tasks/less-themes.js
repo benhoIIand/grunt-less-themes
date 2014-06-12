@@ -29,7 +29,6 @@ module.exports = function (grunt) {
 
         var options = {
             root: './',
-            output: 'generated',
             themes: 'themes/*.less',
             fonts: null,
             placeholder: '{{themeName}}',
@@ -58,7 +57,7 @@ module.exports = function (grunt) {
                 var compilationInnerFunction = function () {
                     async.forEachSeries(srcFiles, function (f, nextFileObj) {
                         var themeName = themePath.toString().split('\/').pop().replace(/\..+$/, '');
-                        var destFile = options.output + '/' + f.dest.replace(options.placeholder, themeName);
+                        var destFile = f.dest.replace(options.placeholder, themeName);
                         if (fontPath) {
                             var fontName = fontPath.toString().split('\/').pop().replace(/\..+$/, '');
                             destFile = destFile.replace(options.font_placeholder, fontName);
