@@ -5,9 +5,9 @@
   "version": "0.0.5",
   "repository": {
     "type": "git",
-    "url": "git@github.com:joncampbell/grunt-less-themes.git"
+    "url": "git@github.com:hollandben/grunt-less-themes.git"
   },
-  "bugs": "https://github.com/joncampbell/issues",
+  "bugs": "https://github.com/hollandben/issues",
   "licenses": [
     {
       "type": "MIT",
