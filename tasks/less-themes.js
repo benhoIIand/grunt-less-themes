@@ -15,9 +15,9 @@ module.exports = function (grunt) {
 
     var path = require('path'),
         less = require('less'),
-        fs = require('fs');
+        fs   = require('fs');
 
-    var _ = grunt.util._,
+    var _     = grunt.util._,
         async = grunt.util.async;
 
     var lessOptions = {
@@ -25,7 +25,7 @@ module.exports = function (grunt) {
         render: ['compress', 'cleancss', 'yuicompress', 'ieCompat']
     };
 
-    grunt.registerMultiTask('lessThemes', 'Compile multiple themed LESS files to CSS', function () {
+    grunt.registerMultiTask('lessThemes', 'Compile multiple themed LESS files to CSS', function() {
 
         var options = {
             themes: 'themes/*.less',
@@ -47,14 +47,14 @@ module.exports = function (grunt) {
         var fonts = options.fonts ? grunt.file.expand(options.fonts) : null;
         var fontPath = null;
 
-        var compilationFunction = function (themePath, nextTheme) {
+        var compilationFunction = function(themePath, nextTheme) {
             var rs = fs.createReadStream(themePath);
             rs.pipe(fs.createWriteStream(options.themeImport));
 
             rs.on('end', function () {
 
-                var compilationInnerFunction = function () {
-                    async.forEachSeries(srcFiles, function (f, nextFileObj) {
+                var compilationInnerFunction = function() {
+                    async.forEachSeries(srcFiles, function(f, nextFileObj) {
                         var themeName = themePath.toString().split('\/').pop().replace(/\..+$/, '');
                         var destFile = f.dest.replace(options.placeholder, themeName);
                         if (fontPath) {
@@ -62,7 +62,7 @@ module.exports = function (grunt) {
                             destFile = destFile.replace(options.font_placeholder, fontName);
                         }
 
-                        var files = f.src.filter(function (filepath) {
+                        var files = f.src.filter(function(filepath) {
                             // Warn on and remove invalid source files (if nonull was set).
                             if (!grunt.file.exists(filepath)) {
                                 grunt.log.warn('Source file "' + filepath + '" not found.');
@@ -83,8 +83,8 @@ module.exports = function (grunt) {
 
                         var compiled = [];
 
-                        async.concatSeries(files, function (file, next) {
-                            compileLess(file, options, function (err, css) {
+                        async.concatSeries(files, function(file, next) {
+                            compileLess(file, options, function(err, css) {
                                 if (!err) {
                                     compiled.push(css);
                                     next();
@@ -118,7 +118,7 @@ module.exports = function (grunt) {
 
 
         if (fonts) {
-            async.forEachSeries(fonts, function (fontPathInner, nextFont) {
+            async.forEachSeries(fonts, function(fontPathInner, nextFont) {
                 fontPath = fontPathInner;
                 async.forEachSeries(themes, compilationFunction, nextFont);
             }, done);
@@ -127,7 +127,7 @@ module.exports = function (grunt) {
         }
     });
 
-    var compileLess = function (srcFile, options, callback) {
+    var compileLess = function(srcFile, options, callback) {
         options = _.extend({
             filename: srcFile
         }, options);
@@ -138,7 +138,7 @@ module.exports = function (grunt) {
 
         var parser = new less.Parser(_.pick(options, lessOptions.parse));
 
-        parser.parse(srcCode, function (parse_err, tree) {
+        parser.parse(srcCode, function(parse_err, tree) {
             if (parse_err) {
                 lessError(parse_err);
                 callback(true, '');
@@ -154,12 +154,12 @@ module.exports = function (grunt) {
         });
     };
 
-    var formatLessError = function (e) {
+    var formatLessError = function(e) {
         var pos = '[' + 'L' + e.line + ':' + ('C' + e.column) + ']';
         return e.filename + ': ' + pos + ' ' + e.message;
     };
 
-    var lessError = function (e) {
+    var lessError = function(e) {
         var message = less.formatError ? less.formatError(e) : formatLessError(e);
 
         grunt.log.error(message);
