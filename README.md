@@ -65,6 +65,11 @@ Default: '{{themeDir}}'
 
 This option is the placeholder string used in the output CSS filename. The name of each theme will replace this placeholder.
 
+#### sourceMap
+Type: `Boolean`
+Default: `false`
+Enable source maps
+
 ### Usage Examples
 
 #### Simple
@@ -90,6 +95,7 @@ lessThemes: {
         options: {
             output: 'path/to/output',
             themeDir: 'path/to/themes'
+            sourceMap: true,
         },
         files: {
             'core_{{themeName}}.css': ['core/*.less'],
