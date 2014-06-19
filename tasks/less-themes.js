@@ -11,7 +11,7 @@
 
 'use strict';
 
-module.exports = function(grunt) {
+module.exports = function (grunt) {
 
     var path = require('path'),
         less = require('less'),
@@ -22,17 +22,18 @@ module.exports = function(grunt) {
 
     var lessOptions = {
         parse: ['paths', 'optimization', 'filename', 'strictImports', 'dumpLineNumbers'],
-        render: ['compress', 'yuicompress', 'ieCompat']
+        render: ['compress', 'cleancss', 'yuicompress', 'ieCompat','sourceMap', 'sourceMapFilename', 'sourceMapURL', 'sourceMapBasepath', 'sourceMapRootpath', 'outputSourceFiles']
     };
 
     grunt.registerMultiTask('lessThemes', 'Compile multiple themed LESS files to CSS', function() {
 
         var options = {
-            root: './',
-            output: 'generated',
-            themeDir: 'themes',
+            themes: 'themes/*.less',
+            fonts: null,
             placeholder: '{{themeName}}',
-            themeImport: 'theme'
+            font_placeholder: '{{fontName}}',
+            themeImport: 'theme',
+            fontImport: 'font'
         };
 
         var done = this.async();
@@ -40,68 +41,107 @@ module.exports = function(grunt) {
         var options = _.extend(options, this.options()),
             srcFiles = this.files;
 
-        async.forEachSeries(options.themes, function(theme, nextTheme) {
-            var themePath = options.root +'/'+ options.themeDir +'/'+ theme +'.less';
+        lessOptions = _.extend(lessOptions, this.options().lessOptions)
 
+        var themes = grunt.file.expand(options.themes);
+        var fonts = options.fonts ? grunt.file.expand(options.fonts) : null;
+        var fontPath = null;
+
+        var compilationFunction = function(themePath, nextTheme) {
             var rs = fs.createReadStream(themePath);
             rs.pipe(fs.createWriteStream(options.themeImport));
 
-            rs.on('end', function(){
+            rs.on('end', function () {
 
-                async.forEachSeries(srcFiles, function(f, nextFileObj) {
-                    var destFile = options.output +'/'+ f.dest.replace(options.placeholder, theme);
-
-                    var files = f.src.filter(function(filepath) {
-                        // Warn on and remove invalid source files (if nonull was set).
-                        if (!grunt.file.exists(filepath)) {
-                            grunt.log.warn('Source file "' + filepath + '" not found.');
-                            return false;
-                        } else {
-                            return true;
-                        }
-                    });
-
-                    if (files.length === 0) {
-                        if (f.src.length < 1) {
-                            grunt.log.warn('Destination not written because no source files were found.');
+                var compilationInnerFunction = function() {
+                    async.forEachSeries(srcFiles, function(f, nextFileObj) {
+                        var themeName = themePath.toString().split('\/').pop().replace(/\..+$/, '');
+                        var destFile = f.dest.replace(options.placeholder, themeName);
+                        if (fontPath) {
+                            var fontName = fontPath.toString().split('\/').pop().replace(/\..+$/, '');
+                            destFile = destFile.replace(options.font_placeholder, fontName);
                         }
 
-                        // No src files, goto next target. Warn would have been issued above.
-                        return nextFileObj();
-                    }
-
-                    var compiled = [];
-
-                    async.concatSeries(files, function(file, next) {
-                        compileLess(file, options, function(err, css) {
-                            if (!err) {
-                                compiled.push(css);
-                                next();
+                        var files = f.src.filter(function(filepath) {
+                            // Warn on and remove invalid source files (if nonull was set).
+                            if (!grunt.file.exists(filepath)) {
+                                grunt.log.warn('Source file "' + filepath + '" not found.');
+                                return false;
                             } else {
-                                nextFileObj(err);
+                                return true;
                             }
                         });
-                    }, function() {
-                        if (compiled.length < 1) {
-                            grunt.log.warn('Destination not written because compiled files were empty.');
-                        } else {
-                            grunt.file.write(destFile, compiled.join(grunt.util.normalizelf(grunt.util.linefeed)));
-                            grunt.log.writeln('File ' + destFile.cyan + ' created.');
+
+                        if (files.length === 0) {
+                            if (f.src.length < 1) {
+                                grunt.log.warn('Destination not written because no source files were found.');
+                            }
+
+                            // No src files, goto next target. Warn would have been issued above.
+                            return nextFileObj();
                         }
-                        nextFileObj();
-                    });
 
-                }, nextTheme);
+                        var compiled = [];
+
+                        async.concatSeries(files, function(file, next) {
+                            compileLess(file, options, function(err, css) {
+                                if (!err) {
+                                    compiled.push(css);
+                                    next();
+                                } else {
+                                    nextFileObj(err);
+                                }
+                            }, function (sourceMapContent) {
+                                grunt.file.write(options.sourceMapFilename, sourceMapContent);
+                            });
+                        }, function () {
+                            if (compiled.length < 1) {
+                                grunt.log.warn('Destination not written because compiled files were empty.');
+                            } else {
+                                grunt.file.write(destFile, compiled.join(grunt.util.normalizelf(grunt.util.linefeed)));
+                                grunt.log.writeln('File ' + destFile.cyan + ' created.');
+                            }
+                            nextFileObj();
+                        });
+
+                    }, nextTheme);
+                };
+
+                if (fontPath) {
+                    var rsFont = fs.createReadStream(fontPath);
+                    rsFont.pipe(fs.createWriteStream(options.fontImport));
+                    rsFont.on('end', compilationInnerFunction);
+                } else {
+                    compilationInnerFunction();
+                }
+
             });
+        };
 
-        }, done);
+
+        if (fonts) {
+            async.forEachSeries(fonts, function(fontPathInner, nextFont) {
+                fontPath = fontPathInner;
+                async.forEachSeries(themes, compilationFunction, nextFont);
+            }, done);
+        } else {
+            async.forEachSeries(themes, compilationFunction, done);
+        }
     });
 
-    var compileLess = function(srcFile, options, callback) {
+    var compileLess = function(srcFile, options, callback, sourceMapCallback) {
         options = _.extend({
             filename: srcFile
         }, options);
         options.paths = options.paths || [path.dirname(srcFile)];
+
+        if (typeof options.sourceMapBasepath === 'function') {
+            try {
+                options.sourceMapBasepath = options.sourceMapBasepath(srcFile);
+            } catch (e) {
+                grunt.fail.warn(wrapError(e, 'Generating sourceMapBasepath failed.'));
+            }
+        }
 
         var css;
         var srcCode = grunt.file.read(srcFile);
@@ -109,13 +149,19 @@ module.exports = function(grunt) {
         var parser = new less.Parser(_.pick(options, lessOptions.parse));
 
         parser.parse(srcCode, function(parse_err, tree) {
+            var minifyOptions = _.pick(options, lessOptions.render);
+
             if (parse_err) {
                 lessError(parse_err);
                 callback(true, '');
             }
 
+            if (minifyOptions.sourceMapFilename) {
+                minifyOptions.writeSourceMap = sourceMapCallback;
+            }
+
             try {
-                css = tree.toCSS(_.pick(options, lessOptions.render));
+                css = tree.toCSS(minifyOptions);
                 callback(null, css);
             } catch (e) {
                 lessError(e);

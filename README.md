@@ -1,6 +1,6 @@
 # grunt-less-themes [![Build Status](https://travis-ci.org/hollandben/grunt-less-themes.png?branch=master)](https://travis-ci.org/hollandben/grunt-less-themes)
 
-> Compile multiple themed LESS files to CSS.
+> Compile multiple themed LESS files to CSS. This version has been modified to support font configurations as well for n^2 possible combinations.
 
 ## Getting Started
 This plugin requires Grunt `~0.4.0`
@@ -34,22 +34,11 @@ Default: 'generated'
 
 This option defines the output directory for the `grunt-less-theme` task.
 
-#### themeDir
-Type: `String`
-Default: 'themes'
-
-This option defines the directory where all the themes are hosted
-
 #### themes
-Type: `Array`
-
-This option provides the `grunt-less-themes` task with the names of each theme. This name is used to in finding the theme and in the generated file.
-
-#### placeholder
 Type: `String`
-Default: '{{theme}}'
+Default: 'themes/*.less'
 
-This option is the placeholder string used in the output CSS filename. The name of each theme will replace this placeholder.
+This option defines the path to where all the themes are hosted
 
 #### themeImport
 Type: `String`
@@ -57,6 +46,29 @@ Default: 'theme'
 
 This option is the name of the theme file that is imported into each LESS file for compilation.
 
+#### themes
+Type: `String`
+Default: null
+
+This option defines the path to where all the fonts are hosted. If this is null then font parsing will not occur.
+
+#### fontImport
+Type: `String`
+Default: 'theme'
+
+This option is the name of the font file that is imported into each LESS file for compilation.
+
+
+#### placeholder
+Type: `String`
+Default: '{{themeDir}}'
+
+This option is the placeholder string used in the output CSS filename. The name of each theme will replace this placeholder.
+
+#### sourceMap
+Type: `Boolean`
+Default: `false`
+Enable source maps
 
 ### Usage Examples
 
@@ -82,7 +94,8 @@ lessThemes: {
     dev: {
         options: {
             output: 'path/to/output',
-            themeDir: 'path/to/themes'
+            themeDir: 'path/to/themes',
+            sourceMap: true,
         },
         files: {
             'core_{{themeName}}.css': ['core/*.less'],
