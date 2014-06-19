@@ -22,7 +22,7 @@ module.exports = function (grunt) {
 
     var lessOptions = {
         parse: ['paths', 'optimization', 'filename', 'strictImports', 'dumpLineNumbers'],
-        render: ['compress', 'cleancss', 'yuicompress', 'ieCompat']
+        render: ['compress', 'cleancss', 'yuicompress', 'ieCompat','sourceMap', 'sourceMapFilename', 'sourceMapURL', 'sourceMapBasepath', 'sourceMapRootpath', 'outputSourceFiles']
     };
 
     grunt.registerMultiTask('lessThemes', 'Compile multiple themed LESS files to CSS', function() {
@@ -91,6 +91,8 @@ module.exports = function (grunt) {
                                 } else {
                                     nextFileObj(err);
                                 }
+                            }, function (sourceMapContent) {
+                                grunt.file.write(options.sourceMapFilename, sourceMapContent);
                             });
                         }, function () {
                             if (compiled.length < 1) {
@@ -127,11 +129,19 @@ module.exports = function (grunt) {
         }
     });
 
-    var compileLess = function(srcFile, options, callback) {
+    var compileLess = function(srcFile, options, callback, sourceMapCallback) {
         options = _.extend({
             filename: srcFile
         }, options);
         options.paths = options.paths || [path.dirname(srcFile)];
+
+        if (typeof options.sourceMapBasepath === 'function') {
+            try {
+                options.sourceMapBasepath = options.sourceMapBasepath(srcFile);
+            } catch (e) {
+                grunt.fail.warn(wrapError(e, 'Generating sourceMapBasepath failed.'));
+            }
+        }
 
         var css;
         var srcCode = grunt.file.read(srcFile);
@@ -139,13 +149,19 @@ module.exports = function (grunt) {
         var parser = new less.Parser(_.pick(options, lessOptions.parse));
 
         parser.parse(srcCode, function(parse_err, tree) {
+            var minifyOptions = _.pick(options, lessOptions.render);
+
             if (parse_err) {
                 lessError(parse_err);
                 callback(true, '');
             }
 
+            if (minifyOptions.sourceMapFilename) {
+                minifyOptions.writeSourceMap = sourceMapCallback;
+            }
+
             try {
-                css = tree.toCSS(_.pick(options, lessOptions.render));
+                css = tree.toCSS(minifyOptions);
                 callback(null, css);
             } catch (e) {
                 lessError(e);
