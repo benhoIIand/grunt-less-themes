@@ -1,5 +1,7 @@
 # grunt-less-themes [![Build Status](https://travis-ci.org/hollandben/grunt-less-themes.png?branch=master)](https://travis-ci.org/hollandben/grunt-less-themes)
 
+## This is no longer maintained
+
 > Compile multiple themed LESS files to CSS.
 
 ## Getting Started
